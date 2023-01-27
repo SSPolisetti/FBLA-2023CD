@@ -21,4 +21,8 @@ class NavController(
         }
     }
 
+    //navigate back from student to students or event to events
+    fun navBack() {
+
+    }
 }
