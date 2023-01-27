@@ -14,7 +14,7 @@ class NavController(
     //store state of current screen
     var curScreen : MutableState<String>  = mutableStateOf(login)
 
-    //naviagte between screens using back stack
+    //navigate between screens using back stack
     fun navigate(goTo : String) {
         if (goTo != curScreen.value) {
 
