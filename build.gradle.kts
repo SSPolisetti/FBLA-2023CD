@@ -4,7 +4,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
     id("org.jetbrains.compose")
+
+
 }
 
 group = "com.example"
@@ -14,6 +17,9 @@ repositories {
     google()
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
+
+
 }
 
 kotlin {
@@ -27,6 +33,12 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation("io.github.jan-tennert.supabase:postgrest-kt:0.7.6")
+                implementation("io.ktor:ktor-client-cio:2.0.3")
+
+
+
+
             }
         }
         val jvmTest by getting

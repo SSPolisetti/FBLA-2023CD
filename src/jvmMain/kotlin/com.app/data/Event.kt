@@ -1,5 +1,8 @@
 package com.app.data
 
+
+
+//@Serialized
 data class Event(
     val event_id : Int,
     var name : String,
