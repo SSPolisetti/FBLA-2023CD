@@ -33,6 +33,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation("io.github.jan-tennert.supabase:gotrue-kt:0.7.6")
                 implementation("io.github.jan-tennert.supabase:postgrest-kt:0.7.6")
                 implementation("io.ktor:ktor-client-cio:2.0.3")
 

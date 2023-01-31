@@ -1,14 +1,11 @@
 package com.app.data
 
 
-
-//@Serialized
 data class Event(
-    val event_id : Int,
+    val event_id : Int = -1,
     var name : String,
     var desc : String,
-    var points : Int,
+    var date : java.time.LocalDate,
+    var event_type : Int = 0,
     var location : String,
-) {
-
-}
+)
