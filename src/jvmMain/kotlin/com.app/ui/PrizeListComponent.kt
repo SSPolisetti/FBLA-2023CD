@@ -1,8 +1,11 @@
 package com.app.ui
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import com.app.data.DbManager
 import com.app.data.Prize
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.essenty.lifecycle.doOnCreate
 import com.arkivanov.essenty.lifecycle.doOnDestroy
@@ -73,5 +76,12 @@ class DefaultPrizeListComponent(
     override fun onPrizeClicked(prize: Prize) {
         onPrizeSelected(prize)
     }
+
+}
+
+
+@Composable
+fun PrizeListContent(component: PrizeListComponent) {
+    val prizeListModel by component.model.subscribeAsState()
 
 }
