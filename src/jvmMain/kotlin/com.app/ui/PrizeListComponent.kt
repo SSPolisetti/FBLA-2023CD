@@ -82,6 +82,9 @@ class DefaultPrizeListComponent(
 
 @Composable
 fun PrizeListContent(component: PrizeListComponent) {
+
     val prizeListModel by component.model.subscribeAsState()
+
+
 
 }

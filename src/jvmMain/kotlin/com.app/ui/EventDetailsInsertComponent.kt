@@ -33,7 +33,8 @@ interface EventDetailsInsertComponent {
         val type_id : Int,
         val location : String,
         val types : List<EventType>,
-        val isLoading : Boolean
+        val isLoading : Boolean,
+        val isLocked : Boolean
     )
 }
 
@@ -55,7 +56,8 @@ class DefaultEventDetailsInsertComponent(
                 type_id = 1,
                 location = "",
                 types = types,
-                isLoading = false
+                isLoading = false,
+                isLocked = false
             )
         )
 
