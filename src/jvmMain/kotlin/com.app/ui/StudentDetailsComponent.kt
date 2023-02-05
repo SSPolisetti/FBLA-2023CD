@@ -55,7 +55,8 @@ interface StudentDetailsComponent {
         val attendedEvents : List<Attendance>,
         val isLoading : Boolean,
         val removeAttendance: MutableSet<Int>,
-        val addAttendance : MutableSet<Int>
+        val addAttendance : MutableSet<Int>,
+        val isLocked : Boolean
     )
 }
 
@@ -90,7 +91,8 @@ class DefaultStudentDetailsComponent(
                 attendedEvents = emptyList<Attendance>(),
                 isLoading = false,
                 removeAttendance = mutableSetOf<Int>(),
-                addAttendance = mutableSetOf<Int>()
+                addAttendance = mutableSetOf<Int>(),
+                isLocked = false
             )
         )
 
@@ -123,20 +125,21 @@ class DefaultStudentDetailsComponent(
     }
 
     override fun saveChanges() {
-        scope.launch {
 
-            model.value = model.value.copy(isLoading = true)
+            scope.launch {
 
-            DbManager.updateStudentAndAttendance(
-                model.value.student,
-                model.value.removeAttendance.isNotEmpty(),
-                model.value.addAttendance.isNotEmpty(),
-                model.value.removeAttendance.joinToString(separator = ","),
-                model.value.addAttendance.joinToString(separator = ",")
-            )
+                model.value = model.value.copy(isLoading = true)
 
-            model.value = model.value.copy(isLoading = false)
-        }
+                DbManager.updateStudentAndAttendance(
+                    model.value.student,
+                    model.value.removeAttendance.isNotEmpty(),
+                    model.value.addAttendance.isNotEmpty(),
+                    model.value.removeAttendance.joinToString(separator = ","),
+                    model.value.addAttendance.joinToString(separator = ",")
+                )
+
+                model.value = model.value.copy(isLoading = false)
+            }
         loadEvents()
 
     }
@@ -205,7 +208,11 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
             }
             Spacer(modifier = Modifier.weight(0.3f))
             Button(onClick = {
-                component.saveChanges()
+                if (!studentDetailsModel.isLocked) {
+                    component.saveChanges()
+                } else {
+                    //launch dialog box
+                }
             }) {
                 Text("Save Changes")
             }

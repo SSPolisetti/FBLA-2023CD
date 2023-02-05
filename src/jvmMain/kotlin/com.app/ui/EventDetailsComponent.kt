@@ -48,7 +48,8 @@ interface EventDetailsComponent {
     data class EventDetailsModel(
         val event : Event,
         val types : List<EventType>,
-        val isLoading : Boolean
+        val isLoading : Boolean,
+        val isLocked : Boolean
     )
 
 
@@ -71,7 +72,8 @@ class DefaultEventDetailsComponent (
             EventDetailsComponent.EventDetailsModel(
                 event = event,
                 types = types,
-                isLoading = false
+                isLoading = false,
+                isLocked = false
             )
         )
 
@@ -133,12 +135,15 @@ class DefaultEventDetailsComponent (
     }
 
     override fun saveChanges() {
-        scope.launch {
-            model.value = model.value.copy(isLoading = true)
+        if (!model.value.isLocked) {
+            scope.launch {
+                model.value = model.value.copy(isLoading = true)
 
-            DbManager.editEvent(model.value.event)
+                DbManager.editEvent(model.value.event)
 
-            model.value = model.value.copy(isLoading = false)
+                model.value = model.value.copy(isLoading = false)
+            }
+        } else {
 
         }
     }
@@ -245,12 +250,13 @@ fun EventDetailsContent(component: EventDetailsComponent) {
                             onValueChange = {
                                     component.onDateChanged(dateToPgDate(it))
                             },
-                            visualTransformation = DateTransformation(),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Number,
                                 autoCorrect = false,
                                 imeAction = ImeAction.Next
-                            )
+                            ),
+                            label = {Text("Date (MM/DD/YYYY)")},
+                            modifier = Modifier.width(150.dp)
                         )
 
                         Spacer(modifier = Modifier.weight(0.1f))

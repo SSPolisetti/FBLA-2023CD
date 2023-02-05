@@ -43,6 +43,7 @@ interface StudentDetailsInsertComponent {
             val lName : String,
             val mInitial : String,
             val grade : Int,
+            val isLocked : Boolean
         )
 
 
@@ -62,7 +63,8 @@ class DefaultStudentDetailsInsertComponent(
                 fName = "",
                 lName = "",
                 mInitial = "",
-                grade = 9
+                grade = 9,
+                isLocked = false,
             )
         )
 
@@ -130,7 +132,9 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
             Spacer(modifier = Modifier.weight(0.6f))
 
             Button(onClick = {
-                component.insertStudent()
+                if (!studentDetailsInsertModel.isLocked) {
+                    component.insertStudent()
+                }
             }) {
                 Text("Add Student")
             }

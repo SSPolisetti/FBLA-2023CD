@@ -176,7 +176,8 @@ object DbManager  {
             "e_name" to event.name,
             "e_desc" to event.desc,
             "e_date" to event.date,
-            "e_type_id" to "${event.event_type}"
+            "e_type_id" to "${event.event_type}",
+            "location" to event.location
         ))
         print("$result/n")
 
