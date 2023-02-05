@@ -1,11 +1,14 @@
 package com.app.data
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class Event(
-    val event_id : Int = -1,
-    var name : String,
-    var desc : String,
-    var date : java.time.LocalDate,
-    var event_type : Int = 0,
-    var location : String,
+    @SerialName("id") val event_id : Int = -1,
+    @SerialName("event_name") val name : String,
+    @SerialName("event_description") val desc : String,
+    @SerialName("date") val date : String,
+    @SerialName("event_type_id") val event_type : Int = 0,
+    @SerialName("location") val location : String,
 )

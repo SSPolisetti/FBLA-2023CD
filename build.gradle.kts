@@ -33,9 +33,12 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-                implementation("io.github.jan-tennert.supabase:gotrue-kt:0.7.6")
                 implementation("io.github.jan-tennert.supabase:postgrest-kt:0.7.6")
                 implementation("io.ktor:ktor-client-cio:2.0.3")
+                implementation("com.arkivanov.decompose:decompose:1.0.0-beta-04")
+                implementation("com.arkivanov.decompose:extensions-compose-jetbrains:1.0.0-beta-04")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.6.4")
+
 
 
 

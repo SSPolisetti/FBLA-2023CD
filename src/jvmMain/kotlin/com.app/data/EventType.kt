@@ -1,7 +1,11 @@
 package com.app.data
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class EventType (
-    val typeId : Int,
-    val typeName : String,
-    val typePoints : Int
+    @SerialName("id") val typeId : Int,
+    @SerialName("type_name") val typeName : String,
+    @SerialName("points_attend") val typePoints : Int
         )
