@@ -48,6 +48,14 @@ interface StudentDetailsComponent {
 
     fun revertAttendance(eventId : Int)
 
+    fun firstNameCheck(isValid : Boolean)
+
+    fun lastNameCheck(isValid : Boolean)
+
+    fun showErrorMessage()
+
+    fun closeErrorMessage()
+
 
     data class StudentDetailsModel(
         val student : Student,
@@ -92,7 +100,9 @@ class DefaultStudentDetailsComponent(
                 isLoading = false,
                 removeAttendance = mutableSetOf<Int>(),
                 addAttendance = mutableSetOf<Int>(),
-                isLocked = false
+                isFNameValid = true,
+                isLNameValid = true,
+                showDialog = false
             )
         )
 
@@ -126,6 +136,7 @@ class DefaultStudentDetailsComponent(
 
     override fun saveChanges() {
 
+        if (model.value.isLNameValid && model.value.isFNameValid) {
             scope.launch {
 
                 model.value = model.value.copy(isLoading = true)
@@ -140,7 +151,9 @@ class DefaultStudentDetailsComponent(
 
                 model.value = model.value.copy(isLoading = false)
             }
-        loadEvents()
+            loadEvents()
+        }
+
 
     }
 
@@ -185,6 +198,54 @@ class DefaultStudentDetailsComponent(
         )
     }
 
+    override fun firstNameCheck(isValid : Boolean) {
+        model.value = model.value.copy(isFNameValid = isValid)
+    }
+
+
+    override fun lastNameCheck(isValid : Boolean) {
+        model.value = model.value.copy(isLNameValid = isValid)
+    }
+
+    override fun showErrorMessage() {
+        model.value = model.value.copy(showDialog = true)
+    }
+
+    override fun closeErrorMessage() {
+        model.value = model.value.copy(showDialog = false)
+    }
+}
+
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun ErrorMessage(openDialog: Boolean, component: StudentDetailsComponent) {
+    if (openDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                component.closeErrorMessage()
+            },
+            title = {
+                Text("Invalid Input")
+            },
+            text = {
+                Text("First name and last name are required fields")
+            },
+            buttons = {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        component.closeErrorMessage()
+                    }
+                ) {
+                    Text("Dismiss")
+                }
+            },
+            modifier = Modifier.width(500.dp).height(250.dp)
+
+
+        )
+    }
 }
 
 
@@ -193,7 +254,10 @@ class DefaultStudentDetailsComponent(
 fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifier = Modifier) {
     val studentDetailsModel by component.model.subscribeAsState()
 
-    Column() {
+    ErrorMessage(studentDetailsModel.showDialog, component)
+
+
+    Column {
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -210,7 +274,7 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
                 if (!studentDetailsModel.isLocked) {
                     component.saveChanges()
                 } else {
-                    //launch dialog box
+                    component.showErrorMessage()
                 }
             }) {
                 Text("Save Changes")
@@ -258,7 +322,11 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
                 OutlinedTextField(
                     value = studentDetailsModel.student.first_name,
                     onValueChange = {
-                        if (it.length < 20) component.onFirstNameChanged(it)
+                        if (it.length < 20) {
+                            component.onFirstNameChanged(it)
+                            component.firstNameCheck(true)
+                        }
+                        if (it.isEmpty())  component.firstNameCheck(false)
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -359,7 +427,7 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
                                 )
                                 Spacer(modifier = Modifier.weight(0.1f))
                                 Text(
-                                    pgDateToDate(event.date)
+                                    pgDateToDate(event.date, isEditing = false)
                                 )
 
                                 Spacer(modifier = Modifier.weight(0.1f))
@@ -412,9 +480,14 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
 
 }
 
-fun pgDateToDate(date : String) : String {
+fun pgDateToDate(date : String, isEditing : Boolean) : String {
 
     val dateList = date.split("-")
-    return "${dateList[2]}/${dateList[1]}/${dateList[0]}"
+    return if (isEditing) {
+        "${dateList[1]}${dateList[2]}${dateList[0]}"
+
+    } else {
+        "${dateList[1]}/${dateList[2]}/${dateList[0]}"
+    }
 
 }

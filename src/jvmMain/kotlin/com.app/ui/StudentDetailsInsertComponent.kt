@@ -38,12 +38,22 @@ interface StudentDetailsInsertComponent {
 
         fun onGradeChanged(grade: Int)
 
+        fun firstNameCheck(isValid : Boolean)
+
+        fun lastNameCheck(isValid : Boolean)
+
+        fun showErrorMessage()
+
+        fun closeErrorMessage()
+
         data class StudentDetailsInsertModel(
             val fName : String,
             val lName : String,
             val mInitial : String,
             val grade : Int,
-            val isLocked : Boolean
+            val isFNameValid : Boolean,
+            val isLNameValid : Boolean,
+            val showDialog : Boolean
         )
 
 
@@ -64,7 +74,9 @@ class DefaultStudentDetailsInsertComponent(
                 lName = "",
                 mInitial = "",
                 grade = 9,
-                isLocked = false,
+                isFNameValid = true,
+                isLNameValid = true,
+                showDialog = false
             )
         )
 
@@ -80,7 +92,8 @@ class DefaultStudentDetailsInsertComponent(
                     last_name = model.value.lName,
                     grade = model.value.grade,
                     points = 0,
-                    middle_initial = model.value.mInitial
+                    middle_initial = model.value.mInitial,
+
                 )
             )
         }
@@ -107,14 +120,64 @@ class DefaultStudentDetailsInsertComponent(
         model.value = model.value.copy(grade = grade)
     }
 
+    override fun firstNameCheck(isValid : Boolean) {
+        model.value = model.value.copy(isFNameValid = isValid)
+    }
+
+
+    override fun lastNameCheck(isValid : Boolean) {
+        model.value = model.value.copy(isLNameValid = isValid)
+    }
+
+    override fun showErrorMessage() {
+        model.value = model.value.copy(showDialog = true)
+    }
+
+    override fun closeErrorMessage() {
+        model.value = model.value.copy(showDialog = false)
+    }
+
 
 }
 
 
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun ErrorMessage(openDialog: Boolean, component: StudentDetailsInsertComponent) {
+    if (openDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                component.closeErrorMessage()
+            },
+            title = {
+                Text("Invalid Input")
+            },
+            text = {
+                Text("First name and last name are required fields")
+            },
+            buttons = {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        component.closeErrorMessage()
+                    }
+                ) {
+                    Text("Dismiss")
+                }
+            },
+            modifier = Modifier.width(500.dp).height(250.dp)
+        )
+    }
+}
 
+
+
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
     val studentDetailsInsertModel by component.model.subscribeAsState()
+
+    ErrorMessage(studentDetailsInsertModel.showDialog, component)
 
     Column {
 
@@ -134,6 +197,8 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
             Button(onClick = {
                 if (!studentDetailsInsertModel.isLocked) {
                     component.insertStudent()
+                } else {
+                    component.showErrorMessage()
                 }
             }) {
                 Text("Add Student")
@@ -159,7 +224,14 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
                 OutlinedTextField(
                     value = studentDetailsInsertModel.lName,
                     onValueChange = {
-                        if (it.length < 20) component.onLastNameChanged(it)
+                        if (it.length < 20) {
+                            component.onLastNameChanged(it)
+                            component.lastNameCheck(true)
+                        }
+                        if (it.isEmpty()){
+                            component.lastNameCheck(false)
+                        }
+
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -168,7 +240,19 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
                         imeAction = ImeAction.Next
                     ),
                     label = { Text("Last Name") },
-                    modifier = Modifier.width(150.dp)
+                    modifier = Modifier.width(150.dp),
+                    colors = if (studentDetailsInsertModel.isLNameValid) {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
+                            unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
+                        )
+                    } else {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.error,
+                            unfocusedBorderColor = MaterialTheme.colors.error
+                        )
+                    }
+
                 )
 
                 Spacer(modifier = Modifier.weight(0.01f))
@@ -176,7 +260,13 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
                 OutlinedTextField(
                     value = studentDetailsInsertModel.fName,
                     onValueChange = {
-                        if (it.length < 20) component.onFirstNameChanged(it)
+                        if (it.length < 20) {
+                            component.onFirstNameChanged(it)
+                            component.firstNameCheck(true)
+                        }
+                        if (it.isEmpty()){
+                            component.firstNameCheck(false)
+                        }
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
@@ -185,7 +275,18 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
                         imeAction = ImeAction.Next
                     ),
                     label = { Text("First Name") },
-                    modifier = Modifier.width(150.dp)
+                    modifier = Modifier.width(150.dp),
+                    colors = if (studentDetailsInsertModel.isLNameValid) {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
+                            unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
+                        )
+                    } else {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.error,
+                            unfocusedBorderColor = MaterialTheme.colors.error
+                        )
+                    }
                 )
 
                 Spacer(modifier = Modifier.weight(0.05f))
@@ -215,7 +316,7 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
                 var expanded by remember { mutableStateOf(false) }
                 val items = mapOf(9 to "9", 10 to "10", 11 to "11", 12 to "12")
                 var selectedGrade = items[studentDetailsInsertModel.grade].toString()
-                Column() {
+                Column {
 
                     OutlinedTextField(
                         value = selectedGrade,

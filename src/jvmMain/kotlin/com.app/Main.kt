@@ -71,42 +71,46 @@ fun RootContent(component : RootComponent, modifier : Modifier = Modifier) {
         modifier = modifier
     ) {
         Column(modifier = Modifier.width(75.dp)) {
-            var studentsSelected by remember { mutableStateOf(true)}
-            var eventsSelected by remember { mutableStateOf(false)}
-            var prizesSelected by remember { mutableStateOf(false)}
+
             NavigationRail() {
                 NavigationRailItem(
-                    selected = studentsSelected,
+                    selected = false,
                     label = {Text("Students")},
                     icon = { Icons.Default.Person},
                     onClick = {
                         component.navigateToLists("Students")
-                        studentsSelected = true
-                        eventsSelected = false
-                        prizesSelected = false
+
                     }
 
                 )
                 NavigationRailItem(
-                    selected = eventsSelected,
+                    selected = false,
                     label = { Text("Events") },
                     icon = { Icons.Default.LocationOn},
                     onClick = {
+
                         component.navigateToLists("Events")
-                        studentsSelected = false
-                        eventsSelected = true
-                        prizesSelected = false
+
                     }
                 )
                 NavigationRailItem(
-                    selected = prizesSelected,
+                    selected = false,
                     label = {Text("Prizes")},
                     icon = {Icons.Default.ShoppingCart},
                     onClick = {
+
                         component.navigateToLists("Prizes")
-                        studentsSelected = false
-                        eventsSelected = false
-                        prizesSelected = true
+
+                    }
+                )
+                NavigationRailItem(
+                    selected = false,
+                    label = {Text("About")},
+                    icon = {Icons.Default.ShoppingCart},
+                    onClick = {
+
+                        component.navigateToLists("About")
+
                     }
                 )
             }
@@ -118,6 +122,11 @@ fun RootContent(component : RootComponent, modifier : Modifier = Modifier) {
                 is RootComponent.Child.StudentDetailsInsertChild -> StudentDetailsInsertContent(component = child.component)
                 is RootComponent.Child.EventListChild -> EventListContent(component = child.component)
                 is RootComponent.Child.EventDetailsChild -> EventDetailsContent(component = child.component)
+                is RootComponent.Child.EventDetailsInsertChild -> EventDetailsInsertContent(component = child.component)
+                is RootComponent.Child.PrizeListChild -> PrizeListContent(component = child.component)
+                is RootComponent.Child.PrizeDetailsChild -> PrizeDetailsContent(component = child.component)
+                is RootComponent.Child.PrizeDetailsInsertChild -> PrizeDetailsInsertContent(component = child.component)
+                is RootComponent.Child.AboutChild -> AboutContent(component = child.component)
             }
         }
 

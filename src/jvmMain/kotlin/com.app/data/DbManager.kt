@@ -8,10 +8,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.reflect.typeOf
 
-@Serializable
-data class studentId(
-    val id : Int
-)
 object DbManager  {
 
 
@@ -28,7 +24,7 @@ object DbManager  {
         print("\"$sortBy\"")
 
         val result = client.postgrest.rpc("load_students", mapOf(
-            "order_by" to "$sortBy"
+            "order_by" to sortBy
         ))
         println("complete")
 
@@ -62,7 +58,7 @@ object DbManager  {
 
     suspend fun searchStudent(search : String, sortBy : String) : List<Student> {
         val result = client.postgrest.rpc("student_search", mapOf(
-            "search" to search,
+            "search" to search.replace("\\s".toRegex(), ""),
             "sortby" to sortBy
         ))
         return result.decodeList(Json {
@@ -72,7 +68,7 @@ object DbManager  {
 
     suspend fun searchEvent(search : String) : List<Event> {
         val result = client.postgrest.rpc("event_search", mapOf(
-            "search" to search
+            "search" to search.replace("\\s".toRegex(), "")
         ))
         return result.decodeList(Json {
             ignoreUnknownKeys = true
@@ -103,7 +99,7 @@ object DbManager  {
             "e_name" to event.name,
             "e_desc" to event.desc,
             "e_date" to event.date,
-            "type" to event.event_type,
+            "type" to "${event.event_type}",
             "e_location" to event.location
         ))
         print("$result/n")
@@ -204,7 +200,7 @@ object DbManager  {
         val result = client.postgrest.rpc("insert_prize", mapOf(
             "p_name" to prize.name,
             "min_points" to "${prize.min_point}",
-            "p_type" to prize.type
+            "type" to prize.type
         ))
         print("$result/n")
     }
