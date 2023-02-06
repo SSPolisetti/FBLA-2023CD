@@ -49,7 +49,10 @@ interface PrizeDetailsComponent {
 
     data class PrizeDetailModel(
        val prize: Prize,
-       val isLoading : Boolean
+       val isNameValid: Boolean,
+       val isPointsValid: Boolean,
+       val isLoading : Boolean,
+       val showDialog : Boolean
    )
 
 }
@@ -68,7 +71,10 @@ class DefaultPrizeDetailsComponent(
         MutableValue(
             PrizeDetailsComponent.PrizeDetailModel(
                 prize = prize,
-                isLoading = false
+                isPointsValid = true,
+                isNameValid = true,
+                isLoading = false,
+                showDialog = false
             )
         )
 

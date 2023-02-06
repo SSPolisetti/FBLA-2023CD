@@ -168,12 +168,9 @@ class DefaultEventDetailsComponent (
 
             DbManager.editEvent(model.value.event.copy(date = dateToPgDate(model.value.event.date)))
 
-                model.value = model.value.copy(isLoading = false)
-            }
-        } else {
-
+            model.value = model.value.copy(isLoading = false)
         }
-    }
+
 
     }
 
@@ -256,7 +253,11 @@ fun EventDetailsContent(component: EventDetailsComponent) {
             }
             Spacer(modifier = Modifier.weight(0.3f))
             Button(onClick = {
-                component.saveChanges()
+                if (eventDetailsModel.isNameValid && eventDetailsModel.isLocationValid && eventDetailsModel.isDateValid){
+                    component.saveChanges()
+                } else {
+                    component.showErrorMessage()
+                }
             }) {
                 Text("Save Changes")
             }
@@ -289,7 +290,11 @@ fun EventDetailsContent(component: EventDetailsComponent) {
                             value = eventDetailsModel.event.name,
                             onValueChange = {
                                 if(it.length < 25) {
-                                component.onNameChanged(it)
+                                    component.nameCheck(true)
+                                    component.onNameChanged(it)
+                                }
+                                if(it.isEmpty()) {
+                                    component.nameCheck(false)
                                 }
                             },
                             singleLine = true,
@@ -299,7 +304,18 @@ fun EventDetailsContent(component: EventDetailsComponent) {
                                 imeAction = ImeAction.Next
                             ),
                             label = {Text("Name")},
-                            modifier = Modifier.width(200.dp)
+                            modifier = Modifier.width(200.dp),
+                            colors = if (eventDetailsModel.isNameValid) {
+                                TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
+                                    unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
+                                )
+                            } else {
+                                TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = MaterialTheme.colors.error,
+                                    unfocusedBorderColor = MaterialTheme.colors.error
+                                )
+                            }
 
                         )
                         Spacer(modifier = Modifier.weight(0.1f))
@@ -427,6 +443,7 @@ fun EventDetailsContent(component: EventDetailsComponent) {
                             trailingIcon = {
                                 Icon(Icons.Filled.ArrowDropDown,"", modifier = Modifier.clickable { expanded = true })
                             },
+
 
 
                             )

@@ -66,7 +66,15 @@ interface StudentListComponent {
         val searchTerm : String,
         val orderBy : String,
         val isUsingSearch : Boolean,
-        val isLoading : Boolean
+        val isLoading : Boolean,
+        val showDialog : Boolean,
+        val showTopDialog : Boolean,
+        val maxWinner : Student,
+        val ninthWinner : Student,
+        val tenthWinner : Student,
+        val eleventhWinner : Student,
+        val twelfthWinner : Student,
+        val prizes : List<Prize>
     )
 }
 
@@ -101,7 +109,15 @@ class DefaultStudentListComponent(
                 searchTerm = "",
                 orderBy = "last_name",
                 isUsingSearch = false,
-                isLoading = false
+                isLoading = false,
+                showDialog = false,
+                showTopDialog = false,
+                maxWinner = Student(0, "", "", 0, -1, ""),
+                ninthWinner = Student(0, "", "", 0, -1, ""),
+                tenthWinner = Student(0, "", "", 0, -1, ""),
+                eleventhWinner = Student(0, "", "", 0, -1, ""),
+                twelfthWinner = Student(0, "", "", 0, -1, ""),
+                prizes = emptyList<Prize>()
             )
         )
 
@@ -226,12 +242,27 @@ class DefaultStudentListComponent(
     override fun onAddStudentSelected() {
         onAddStudentClicked()
     }
+
+    override fun showGenerateMessage() {
+        model.value = model.value.copy(showDialog = true)
+    }
+    override fun closeGenerateMessage() {
+        model.value = model.value.copy(showDialog = false)
+    }
+
+    override fun showTopMessage(){
+        model.value = model.value.copy(showTopDialog = true)
+    }
+    override fun closeTopMessage(){
+        model.value = model.value.copy(showTopDialog = false)
+    }
 }
 
 @Composable
 fun StudentListContent(component: StudentListComponent, modifier : Modifier = Modifier) {
     val studentListModel by component.model.subscribeAsState()
-
+    GenerateMessage(studentListModel.showDialog, component)
+    TopMessage(studentListModel.showTopDialog, component)
     Column {
 
         Row (
@@ -284,7 +315,10 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
                 singleLine = true,
                 modifier = Modifier.height(75.dp).width(300.dp).padding(start = 10.dp, end = 10.dp),
                 label = {Text("Search")},
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, autoCorrect = false, imeAction = ImeAction.Next)
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Ascii,
+                    autoCorrect = false,
+                    imeAction = ImeAction.Next)
 
 
             )
@@ -390,6 +424,8 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
             Spacer(modifier = Modifier.weight(0.3f))
             Button(
                 onClick = {
+                    component.onGetWinnersClicked()
+                    component.showTopMessage()
 
                 }
             ) {
@@ -409,6 +445,61 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun GenerateMessage(openDialog: Boolean, component: StudentListComponent) {
+    if (openDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                component.closeGenerateMessage()
+            },
+            title = {
+                Text("Report Generated")
+            },
+            text = {
+                Text("Report has been generated and placed in downloads folder.")
+            },
+            buttons = {
+                Button(
+                    modifier = Modifier.width(500.dp).height(250.dp),
+                    onClick = {
+                        component.closeGenerateMessage()
+                    }
+                ) {
+                    Text("Dismiss")
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun TopMessage(openDialog: Boolean, component: StudentListComponent) {
+    if (openDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                component.closeTopMessage()
+            },
+            title = {
+                Text("Top Scores Report Generated")
+            },
+            text = {
+                Text("Report has been generated and placed in downloads folder.")
+            },
+            buttons = {
+                Button(
+                    modifier = Modifier.width(500.dp).height(250.dp),
+                    onClick = {
+                        component.closeTopMessage()
+                    }
+                ) {
+                    Text("Dismiss")
+                }
+            }
+        )
+    }
+}
 
 
 

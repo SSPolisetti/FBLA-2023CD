@@ -195,7 +195,7 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
             Spacer(modifier = Modifier.weight(0.6f))
 
             Button(onClick = {
-                if (!studentDetailsInsertModel.isLocked) {
+                if (studentDetailsInsertModel.isFNameValid && studentDetailsInsertModel.isLNameValid) {
                     component.insertStudent()
                 } else {
                     component.showErrorMessage()
@@ -235,7 +235,7 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
+                        keyboardType = KeyboardType.Ascii,
                         autoCorrect = false,
                         imeAction = ImeAction.Next
                     ),
@@ -270,7 +270,7 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
+                        keyboardType = KeyboardType.Ascii,
                         autoCorrect = false,
                         imeAction = ImeAction.Next
                     ),
@@ -301,7 +301,7 @@ fun StudentDetailsInsertContent(component: StudentDetailsInsertComponent) {
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
+                        keyboardType = KeyboardType.Ascii,
                         autoCorrect = false,
                         imeAction = ImeAction.Next
                     ),

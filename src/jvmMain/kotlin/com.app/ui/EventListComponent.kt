@@ -154,7 +154,7 @@ fun EventListContent(component: EventListComponent) {
                 modifier = Modifier.height(75.dp).width(300.dp).padding(start = 10.dp, end = 10.dp),
                 label = { Text("Search") },
                 keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
+                    keyboardType = KeyboardType.Ascii,
                     autoCorrect = false,
                     imeAction = ImeAction.Next
                 )

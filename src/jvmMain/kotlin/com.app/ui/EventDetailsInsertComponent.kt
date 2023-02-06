@@ -207,7 +207,12 @@ fun EventDetailsInsertContent(component: EventDetailsInsertComponent) {
             }
             Spacer(modifier = Modifier.weight(0.4f))
             Button(onClick = {
-                component.insertEvent()
+                if (eventDetailsInsertModel.isDateValid && eventDetailsInsertModel.isLocationValid && eventDetailsInsertModel.isNameValid){
+                    component.insertEvent()
+                } else {
+                    component.showErrorMessage()
+                }
+
             }) {
                 Text("Add Event")
             }

@@ -8,6 +8,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
+import androidx.compose.runtime.internal.isLiveLiteralsEnabled
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -64,7 +65,9 @@ interface StudentDetailsComponent {
         val isLoading : Boolean,
         val removeAttendance: MutableSet<Int>,
         val addAttendance : MutableSet<Int>,
-        val isLocked : Boolean
+        val isFNameValid : Boolean,
+        val isLNameValid : Boolean,
+        val showDialog : Boolean
     )
 }
 
@@ -271,7 +274,7 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
             }
             Spacer(modifier = Modifier.weight(0.3f))
             Button(onClick = {
-                if (!studentDetailsModel.isLocked) {
+                if (studentDetailsModel.isFNameValid && studentDetailsModel.isLNameValid) {
                     component.saveChanges()
                 } else {
                     component.showErrorMessage()
@@ -305,16 +308,33 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
                 OutlinedTextField(
                     value = studentDetailsModel.student.last_name,
                     onValueChange = {
-                        if (it.length < 20) component.onLastNameChanged(it)
+                        if (it.length < 20) {
+                            component.onLastNameChanged(it)
+                            component.lastNameCheck(true)
+                        }
+                        if (it.isEmpty()){
+                            component.lastNameCheck(false)
+                        }
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
+                        keyboardType = KeyboardType.Ascii,
                         autoCorrect = false,
                         imeAction = ImeAction.Next
                     ),
                     label = {Text("Last Name")},
-                    modifier = Modifier.width(150.dp)
+                    modifier = Modifier.width(150.dp),
+                    colors = if (studentDetailsModel.isLNameValid) {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
+                            unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
+                        )
+                    } else {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.error,
+                            unfocusedBorderColor = MaterialTheme.colors.error
+                        )
+                    }
                 )
 
                 Spacer(modifier = Modifier.weight(0.01f))
@@ -330,12 +350,23 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
+                        keyboardType = KeyboardType.Ascii,
                         autoCorrect = false,
                         imeAction = ImeAction.Next
                     ),
                     label = {Text("First Name")},
-                    modifier = Modifier.width(150.dp)
+                    modifier = Modifier.width(150.dp),
+                    colors  = if (studentDetailsModel.isFNameValid) {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
+                            unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
+                        )
+                    } else {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.error,
+                            unfocusedBorderColor = MaterialTheme.colors.error
+                        )
+                    }
                 )
                 Spacer(modifier = Modifier.weight(0.05f))
                 Text(",")
@@ -347,7 +378,7 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
+                        keyboardType = KeyboardType.Ascii,
                         autoCorrect = false,
                         imeAction = ImeAction.Next
                     ),
