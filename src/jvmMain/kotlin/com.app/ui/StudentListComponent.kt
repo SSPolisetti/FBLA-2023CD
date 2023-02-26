@@ -382,11 +382,37 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
                                 if (student.middle_initial != "") {
                                     name += " " + student.middle_initial
                                 }
-                                Text("Name: $name")
-                                Spacer(modifier = Modifier.weight(1f))
-                                Text("Grade: " + student.grade.toString())
+
+                                Column(
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.width(250.dp)
+                                ) {
+                                    Text(name)
+                                }
+
+
                                 Spacer(modifier = Modifier.weight(0.5f))
-                                Text("Points: " + student.points.toString())
+
+                                Column(
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.width(100.dp)
+                                ) {
+                                    Text("Grade: " + student.grade.toString())
+                                }
+
+                                Spacer(modifier = Modifier.weight(0.5f))
+
+                                Column (
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.width(100.dp)
+                                        ) {
+                                    Text("Points: " + student.points.toString())
+                                }
+
+
                             }
                         }
                         Spacer(modifier = Modifier.weight(0.1f))
