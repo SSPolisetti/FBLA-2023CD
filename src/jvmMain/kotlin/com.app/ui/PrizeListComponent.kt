@@ -72,10 +72,10 @@ class DefaultPrizeListComponent(
             model.value = model.value.copy(isLoading = true)
 
             delay(20)
-
+            delay(20)
             val prizes = DbManager.loadPrizes()
 
-            delay(20)
+
 
             model.value = model.value.copy(prizes = prizes, isLoading = false)
 
@@ -114,7 +114,8 @@ fun PrizeListContent(component: PrizeListComponent) {
                 modifier = Modifier.height(425.dp).fillMaxWidth().wrapContentSize(Alignment.Center).verticalScroll(stateVertical)
             ) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(end = 15.dp)
                 ) {
                     prizeListModel.prizes.forEach {prize ->
 

@@ -129,8 +129,7 @@ class DefaultStudentListComponent(
             //Update model to indicate data is being loaded through the UI
             model.value = model.value.copy(isLoading = true)
 
-            delay(10)
-            delay(20)
+            delay(30)
             //Use isUsingSearch to either search or simply load students
             val students = if (model.value.isUsingSearch) {
                 DbManager.searchStudent(model.value.searchTerm, model.value.orderBy)
@@ -265,10 +264,12 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
     TopMessage(studentListModel.showTopDialog, component)
     Column {
 
+        //search row
         Row (
-            modifier = Modifier.align(Alignment.End).padding(top = 10.dp, bottom = 15.dp),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.align(Alignment.End).padding(top = 10.dp, bottom = 15.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+
         ) {
 
             /* OrderByDropdown*/
@@ -357,7 +358,8 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
             val stateVertical = rememberScrollState(0)
             Box(modifier = Modifier.height(425.dp).fillMaxWidth().verticalScroll(stateVertical)) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(end = 15.dp)
                 ) {
                     studentListModel.students.forEach {student ->
 
@@ -390,6 +392,10 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
                         Spacer(modifier = Modifier.weight(0.1f))
                     }
                 }
+
+
+
+
                 VerticalScrollbar(
                     modifier = Modifier.align(Alignment.CenterEnd).height(425.dp),
                     adapter = rememberScrollbarAdapter(stateVertical)
@@ -407,7 +413,7 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
 
         }
 
-        Spacer(modifier = Modifier.weight(0.1f))
+        Spacer(modifier = Modifier.weight(0.05f))
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -441,6 +447,8 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
             }
             Spacer(modifier = Modifier.weight(0.2f))
         }
+
+        Spacer(modifier = Modifier.weight(0.1f))
 
     }
 }

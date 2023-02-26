@@ -15,6 +15,9 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.res.loadImageBitmap
+import androidx.compose.ui.res.useResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.rememberWindowState
 import com.app.data.DbManager
@@ -53,6 +56,7 @@ fun main() {
             onCloseRequest = ::exitApplication,
             state = windowState,
             title = "Student Participation Tracker",
+            icon = BitmapPainter(useResource("purple_icon_upscaled.jpg", ::loadImageBitmap))
 
         ) {
             MaterialTheme {
@@ -115,6 +119,7 @@ fun RootContent(component : RootComponent, modifier : Modifier = Modifier) {
                 )
             }
         }
+
         Column (modifier = Modifier.fillMaxHeight().padding(start = 100.dp, end = 25.dp)){
             when (val child = it.instance) {
                 is RootComponent.Child.StudentListChild -> StudentListContent(component = child.component)

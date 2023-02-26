@@ -141,7 +141,7 @@ fun EventListContent(component: EventListComponent) {
 
     Column{
         Row(
-            modifier = Modifier.align(Alignment.End).padding(top = 10.dp, bottom = 15.dp),
+            modifier = Modifier.align(Alignment.End).padding(top = 10.dp, bottom = 15.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -191,7 +191,8 @@ fun EventListContent(component: EventListComponent) {
                     modifier = Modifier.height(425.dp).fillMaxWidth().verticalScroll(stateVertical)
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(end = 15.dp)
                     ) {
                         eventListModel.events.forEach { event ->
 
@@ -264,10 +265,13 @@ fun EventListContent(component: EventListComponent) {
 
                                         Spacer(modifier = Modifier.weight(0.1f))
 
+
                                     }
                                 }
                             }
                         }
+
+
                     VerticalScrollbar(
                         modifier = Modifier.align(Alignment.CenterEnd).height(425.dp),
                         adapter = rememberScrollbarAdapter(stateVertical)

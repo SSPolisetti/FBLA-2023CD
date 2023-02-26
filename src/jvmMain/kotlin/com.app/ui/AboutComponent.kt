@@ -59,7 +59,10 @@ class DefaultAboutComponent(
 fun AboutContent(component: AboutComponent) {
     val aboutModel by component.model.subscribeAsState()
 
-    Column {
+    Column(
+        modifier = Modifier.padding(end = 15.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         val stateVertical = rememberScrollState(0)
         Box(
             modifier = Modifier.fillMaxHeight().fillMaxWidth().verticalScroll(stateVertical)
