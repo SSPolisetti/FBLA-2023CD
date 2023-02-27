@@ -38,6 +38,7 @@ interface StudentDetailsInsertComponent {
 
         fun onGradeChanged(grade: Int)
 
+
         data class StudentDetailsInsertModel(
             val fName : String,
             val lName : String,
@@ -48,6 +49,7 @@ interface StudentDetailsInsertComponent {
 
 
 }
+
 
 
 
@@ -67,6 +69,7 @@ class DefaultStudentDetailsInsertComponent(
                 isLocked = false,
             )
         )
+
 
 
     override fun insertStudent() {
@@ -109,7 +112,6 @@ class DefaultStudentDetailsInsertComponent(
 
 
 }
-
 
 
 @Composable
