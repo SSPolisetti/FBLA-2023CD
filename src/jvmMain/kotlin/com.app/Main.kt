@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.rememberWindowState
 import com.app.data.DbManager
@@ -48,7 +49,7 @@ fun main() {
     }
 
     application {
-        val windowState = rememberWindowState()
+        val windowState = rememberWindowState(height = 675.dp)
 
         LifecycleController(lifecycle, windowState)
 
@@ -56,7 +57,9 @@ fun main() {
             onCloseRequest = ::exitApplication,
             state = windowState,
             title = "Student Participation Tracker",
-            icon = BitmapPainter(useResource("purple_icon_upscaled.jpg", ::loadImageBitmap))
+            icon = BitmapPainter(useResource("purple_icon_upscaled.jpg", ::loadImageBitmap)),
+            resizable = true,
+
 
         ) {
             MaterialTheme {

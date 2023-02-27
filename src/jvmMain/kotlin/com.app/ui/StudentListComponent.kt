@@ -228,7 +228,7 @@ class DefaultStudentListComponent(
 
             println(students.toString())
 
-            var file = System.getProperty("user.home") + "/Downloads/Student_Points_Report-${java.time.LocalDate.now()}_${java.time.LocalDate.EPOCH}.csv"
+            val file = System.getProperty("user.home") + "/Downloads/Student_Points_Report-${java.time.LocalDate.now()}_${java.time.LocalDate.EPOCH}.csv"
             FileOutputStream(file).apply { writeCsv(students) }
 
             model.value = model.value.copy(isLoading = false)
@@ -262,7 +262,10 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
     val studentListModel by component.model.subscribeAsState()
     GenerateMessage(studentListModel.showDialog, component)
     TopMessage(studentListModel.showTopDialog, component)
-    Column {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+
+    ) {
 
         //search row
         Row (
