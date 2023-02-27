@@ -23,10 +23,7 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.essenty.lifecycle.doOnCreate
 import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.arkivanov.essenty.lifecycle.doOnResume
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 interface EventListComponent {
 
@@ -40,7 +37,7 @@ interface EventListComponent {
 
     fun onClearSearch()
 
-    //fun onAddEventSelected()
+    fun onAddEventSelected()
 
     data class EventListModel(
         val events : List<Event>,
@@ -55,7 +52,7 @@ interface EventListComponent {
 class DefaultEventListComponent(
     componentContext: ComponentContext,
     private val onEventSelected : (event : Event, types : List<EventType>) -> Unit,
-    //private val onAddEventClicked : (types : List<EventType>) -> Unit
+    private val onAddEventClicked : (types : List<EventType>) -> Unit
 ) : EventListComponent, ComponentContext by componentContext {
     private val scope = CoroutineScope(Dispatchers.Main)
 
@@ -91,6 +88,7 @@ class DefaultEventListComponent(
             //Update model to indicate data is being loaded through the UI
             model.value = model.value.copy(isLoading = true)
 
+            delay(20)
             //Use isUsingSearch to either search or simply load students
             val events = if (model.value.isUsingSearch) {
                 DbManager.searchEvent(model.value.searchTerm)
@@ -98,6 +96,8 @@ class DefaultEventListComponent(
                 DbManager.loadEvents()
             }
             val types = DbManager.loadTypes()
+
+            delay(20)
 
             //Update the model with the loaded student data
             model.value = model.value.copy(events = events, eventTypes = types,isLoading = false)
@@ -124,9 +124,9 @@ class DefaultEventListComponent(
         loadEvents()
     }
 
-//    override fun onAddEventSelected() {
-//        onAddEventClicked(model.value.eventTypes)
-//    }
+    override fun onAddEventSelected() {
+        onAddEventClicked(model.value.eventTypes)
+    }
 
 
     override fun onSearchValueChange(searchTerm: String) {
@@ -141,7 +141,7 @@ fun EventListContent(component: EventListComponent) {
 
     Column{
         Row(
-            modifier = Modifier.align(Alignment.End).padding(top = 10.dp, bottom = 15.dp),
+            modifier = Modifier.align(Alignment.End).padding(top = 10.dp, bottom = 15.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -151,10 +151,10 @@ fun EventListContent(component: EventListComponent) {
                 value = eventListModel.searchTerm,
                 onValueChange = { component.onSearchValueChange(it) },
                 singleLine = true,
-                modifier = Modifier.height(50.dp).width(300.dp).padding(start = 10.dp, end = 10.dp),
+                modifier = Modifier.height(75.dp).width(300.dp).padding(start = 10.dp, end = 10.dp),
                 label = { Text("Search") },
                 keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
+                    keyboardType = KeyboardType.Ascii,
                     autoCorrect = false,
                     imeAction = ImeAction.Next
                 )
@@ -191,7 +191,8 @@ fun EventListContent(component: EventListComponent) {
                     modifier = Modifier.height(425.dp).fillMaxWidth().verticalScroll(stateVertical)
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(end = 15.dp)
                     ) {
                         eventListModel.events.forEach { event ->
 
@@ -239,7 +240,7 @@ fun EventListContent(component: EventListComponent) {
                                         ) {
 
                                             //Spacer(modifier = Modifier.weight(0.01f))
-                                            Text("Date: ${pgDateToDate(event.date)}")
+                                            Text("Date: ${pgDateToDate(event.date, false)}")
 
                                             Spacer(modifier = Modifier.weight(0.1f))
 
@@ -264,10 +265,13 @@ fun EventListContent(component: EventListComponent) {
 
                                         Spacer(modifier = Modifier.weight(0.1f))
 
+
                                     }
                                 }
                             }
                         }
+
+
                     VerticalScrollbar(
                         modifier = Modifier.align(Alignment.CenterEnd).height(425.dp),
                         adapter = rememberScrollbarAdapter(stateVertical)
@@ -291,7 +295,7 @@ fun EventListContent(component: EventListComponent) {
                 Spacer(modifier = Modifier.weight(0.5f))
                 Button(
                     onClick = {
-                        //component.onAddEventSelected()
+                        component.onAddEventSelected()
                     }
                 ) {
                     Text("Add Event")

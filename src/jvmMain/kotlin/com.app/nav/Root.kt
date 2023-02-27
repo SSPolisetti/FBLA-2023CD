@@ -25,10 +25,11 @@ interface RootComponent {
         class StudentDetailsInsertChild(val component : StudentDetailsInsertComponent) : Child()
         class EventListChild(val component: EventListComponent) : Child()
         class EventDetailsChild(val component : EventDetailsComponent) : Child()
-//        class EventDetailsInsertChild(val component: EventDetailsInsertComponent) : Child()
-//        class PrizeListChild(val component: PrizeListComponent) : Child()
-//        class PrizeDetailsChild(val component : PrizeDetailsComponent) : Child()
-//        class PrizeDetailsInsertChild(val component : PrizeDetailsInsertComponent) : Child()
+        class EventDetailsInsertChild(val component: EventDetailsInsertComponent) : Child()
+        class PrizeListChild(val component: PrizeListComponent) : Child()
+        class PrizeDetailsChild(val component : PrizeDetailsComponent) : Child()
+        class PrizeDetailsInsertChild(val component : PrizeDetailsInsertComponent) : Child()
+        class AboutChild(val component : AboutComponent) : Child()
     }
 }
 
@@ -51,8 +52,9 @@ class DefaultRootComponent(
     override fun navigateToLists(name : String) {
         when (name) {
             "Students" -> navigation.replaceAll(Config.StudentList)
-             "Events" -> navigation.replaceAll(Config.EventList)
-//             "Prizes" -> navigation.replaceAll(Config.PrizesList)
+            "Events" -> navigation.replaceAll(Config.EventList)
+            "Prizes" -> navigation.replaceAll(Config.PrizeList)
+            "About" -> navigation.replaceAll(Config.About)
         }
     }
 
@@ -65,10 +67,11 @@ class DefaultRootComponent(
             is Config.StudentDetailsInsert -> RootComponent.Child.StudentDetailsInsertChild(insertStudentDetailsComponent(componentContext, config))
             is Config.EventList -> RootComponent.Child.EventListChild(eventListComponent(componentContext, config))
             is Config.EventDetails -> RootComponent.Child.EventDetailsChild(eventDetailsComponent(componentContext, config))
-//            is Config.EventDetailsInsert -> RootComponent.Child.EventDetailsInsertChild(insertEventDetailsComponent(componentContext, config))
-//            is Config.PrizeList -> RootComponent.Child.PrizeListChild(prizeListComponent(componentContext, config))
-//            is Config.PrizeDetails -> RootComponent.Child.PrizeDetailsChild(prizeDetailsComponent(componentContext, config))
-//            is Config.PrizeDetailsInsert -> RootComponent.Child.PrizeDetailsInsertChild(insertPrizeDetailsComponent(componentContext, config))
+            is Config.EventDetailsInsert -> RootComponent.Child.EventDetailsInsertChild(insertEventDetailsComponent(componentContext, config))
+            is Config.PrizeList -> RootComponent.Child.PrizeListChild(prizeListComponent(componentContext, config))
+            is Config.PrizeDetails -> RootComponent.Child.PrizeDetailsChild(prizeDetailsComponent(componentContext, config))
+            is Config.PrizeDetailsInsert -> RootComponent.Child.PrizeDetailsInsertChild(insertPrizeDetailsComponent(componentContext, config))
+            is Config.About -> RootComponent.Child.AboutChild(aboutComponent(componentContext, config))
         }
 
 
@@ -104,8 +107,8 @@ class DefaultRootComponent(
             onEventSelected = {event: Event, types : List<EventType> ->
                 navigation.push(Config.EventDetails(event= event, types = types))
             },
-            //onAddEventClicked = {types : List<EventType> ->
-            //    navigation.push(Config.EventDetailsInsert(types = types))}
+            onAddEventClicked = {types : List<EventType> ->
+                navigation.push(Config.EventDetailsInsert(types = types))}
         )
 //
     private fun eventDetailsComponent(componentContext: ComponentContext, config : Config.EventDetails) : EventDetailsComponent =
@@ -116,33 +119,43 @@ class DefaultRootComponent(
             types = config.types
         )
 //
-//    private fun insertEventDetailsComponent(componentContext: ComponentContext, config : Config.EventDetailsInsert) : EventDetailsInsertComponent =
-//        DefaultEventDetailsInsertComponent(
-//            componentContext = componentContext,
-//            onFinished = navigation::pop,
-//            types = config.types
-//        )
+    private fun insertEventDetailsComponent(componentContext: ComponentContext, config : Config.EventDetailsInsert) : EventDetailsInsertComponent =
+        DefaultEventDetailsInsertComponent(
+            componentContext = componentContext,
+            onFinished = navigation::pop,
+            types = config.types
+        )
 //
-//    private fun prizeListComponent(componentContext: ComponentContext, config : Config.PrizeList) : PrizeListComponent =
-//        DefaultPrizeListComponent(
-//            componentContext = componentContext,
-//            onPrizeSelected = {prize: Prize ->
-//                navigation.push(Config.PrizeDetails(prize = prize))
-//            }
-//        )
+    private fun prizeListComponent(componentContext: ComponentContext, config : Config.PrizeList) : PrizeListComponent =
+        DefaultPrizeListComponent(
+            componentContext = componentContext,
+            onPrizeSelected = {prize: Prize ->
+                navigation.push(Config.PrizeDetails(prize = prize))
+            },
+            onAddPrizeClicked = {
+                navigation.push(Config.PrizeDetailsInsert)
+            }
+        )
 //
-//    private fun prizeDetailsComponent(componentContext: ComponentContext, config : Config.PrizeDetails) : PrizeDetailsComponent =
-//        DefaultPrizeDetailsComponent(
-//            componentContext = componentContext,
-//            prize = config.prize,
-//            onFinished = navigation::pop
-//        )
+    private fun prizeDetailsComponent(componentContext: ComponentContext, config : Config.PrizeDetails) : PrizeDetailsComponent =
+        DefaultPrizeDetailsComponent(
+            componentContext = componentContext,
+            prize = config.prize,
+            onFinished = navigation::pop
+        )
 //
-//    private fun insertPrizeDetailsComponent(componentContext: ComponentContext, config : Config.PrizeDetailsInsert) : PrizeDetailsInsertComponent =
-//        DefaultPrizeDetailsInsertComponent(
-//            componentContext = componentContext,
-//            onFinished = navigation::pop
-//        )
+    private fun insertPrizeDetailsComponent(componentContext: ComponentContext, config : Config.PrizeDetailsInsert) : PrizeDetailsInsertComponent =
+        DefaultPrizeDetailsInsertComponent(
+            componentContext = componentContext,
+            onFinished = navigation::pop
+        )
+
+    private fun aboutComponent(componentContext: ComponentContext, config : Config.About) : AboutComponent =
+        DefaultAboutComponent(
+            componentContext = componentContext
+        )
+
+
 
 
     private sealed interface Config : Parcelable {
@@ -151,10 +164,11 @@ class DefaultRootComponent(
         object StudentDetailsInsert: Config
         object EventList : Config
         data class EventDetails(val event : Event, val types : List<EventType>) : Config
-//        data class EventDetailsInsert(val types : List<EventType>) : Config
-//        object PrizeList : Config
-//        data class PrizeDetails(val prize: Prize) : Config
-//        object PrizeDetailsInsert : Config
+        data class EventDetailsInsert(val types : List<EventType>) : Config
+        object PrizeList : Config
+        data class PrizeDetails(val prize: Prize) : Config
+        object PrizeDetailsInsert : Config
+        object About : Config
     }
 
 }

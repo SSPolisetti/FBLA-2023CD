@@ -20,6 +20,7 @@ import com.app.data.EventType
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import com.arkivanov.decompose.value.MutableValue
+import com.arkivanov.essenty.lifecycle.doOnCreate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -43,13 +44,28 @@ interface EventDetailsComponent {
 
     fun deleteEvent()
 
+    fun showErrorMessage()
+
+    fun closeErrorMessage()
+
     fun saveChanges()
+
+    fun dateCheck(isValid: Boolean)
+
+
+    fun locationCheck(isValid : Boolean)
+
+    fun nameCheck(isValid : Boolean)
+
 
     data class EventDetailsModel(
         val event : Event,
         val types : List<EventType>,
         val isLoading : Boolean,
-        val isLocked : Boolean
+        val isDateValid : Boolean,
+        val isNameValid : Boolean,
+        val isLocationValid : Boolean,
+        val showDialog : Boolean
     )
 
 
@@ -61,8 +77,15 @@ class DefaultEventDetailsComponent (
     event : Event,
     private val onFinished : () -> Unit,
     types : List<EventType>
-        ) : EventDetailsComponent {
+        ) : EventDetailsComponent, ComponentContext by componentContext {
 
+    init {
+        lifecycle.doOnCreate() {
+            model.value = model.value.copy(
+                event = model.value.event.copy(
+                    date = pgDateToDate(model.value.event.date, isEditing = true)))
+        }
+    }
 
 
     private val scope = CoroutineScope(Dispatchers.Main)
@@ -72,8 +95,12 @@ class DefaultEventDetailsComponent (
             EventDetailsComponent.EventDetailsModel(
                 event = event,
                 types = types,
+                isNameValid = true,
+                isDateValid = true,
+                isLocationValid = true,
                 isLoading = false,
-                isLocked = false
+                showDialog = false
+
             )
         )
 
@@ -135,24 +162,82 @@ class DefaultEventDetailsComponent (
     }
 
     override fun saveChanges() {
-        if (!model.value.isLocked) {
-            scope.launch {
-                model.value = model.value.copy(isLoading = true)
 
-                DbManager.editEvent(model.value.event)
+        scope.launch {
+            model.value = model.value.copy(isLoading = true)
 
-                model.value = model.value.copy(isLoading = false)
-            }
-        } else {
+            DbManager.editEvent(model.value.event.copy(date = dateToPgDate(model.value.event.date)))
 
+            model.value = model.value.copy(isLoading = false)
         }
+
+
     }
 
+    override fun dateCheck(isValid : Boolean){
+        model.value = model.value.copy(isDateValid = isValid)
+    }
+
+
+    override fun showErrorMessage() {
+        model.value = model.value.copy(showDialog = true)
+    }
+
+    override fun closeErrorMessage() {
+        model.value = model.value.copy(showDialog = false)
+    }
+
+    override fun locationCheck(isValid : Boolean) {
+        model.value = model.value.copy(isLocationValid = false)
+    }
+
+
+    override fun nameCheck(isValid : Boolean) {
+        model.value = model.value.copy(isNameValid = false)
+    }
+
+
+
 }
+
+
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun ErrorMessage(openDialog: Boolean, component: EventDetailsComponent) {
+    if (openDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                component.closeErrorMessage()
+            },
+            title = {
+                Text("Invalid Input")
+            },
+            text = {
+                Text("Name, date, and location are required fields. Date must be a valid date")
+            },
+            buttons = {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        component.closeErrorMessage()
+                    }
+                ) {
+                    Text("Dismiss")
+                }
+            },
+            modifier = Modifier.width(500.dp).height(500.dp)
+        )
+    }
+}
+
+
 
 @Composable
 fun EventDetailsContent(component: EventDetailsComponent) {
     val eventDetailsModel by component.model.subscribeAsState()
+
+    ErrorMessage(eventDetailsModel.showDialog, component)
 
     Column {
         Row(
@@ -168,7 +253,11 @@ fun EventDetailsContent(component: EventDetailsComponent) {
             }
             Spacer(modifier = Modifier.weight(0.3f))
             Button(onClick = {
-                component.saveChanges()
+                if (eventDetailsModel.isNameValid && eventDetailsModel.isLocationValid && eventDetailsModel.isDateValid){
+                    component.saveChanges()
+                } else {
+                    component.showErrorMessage()
+                }
             }) {
                 Text("Save Changes")
             }
@@ -201,17 +290,32 @@ fun EventDetailsContent(component: EventDetailsComponent) {
                             value = eventDetailsModel.event.name,
                             onValueChange = {
                                 if(it.length < 25) {
-                                component.onNameChanged(it)
+                                    component.nameCheck(true)
+                                    component.onNameChanged(it)
+                                }
+                                if(it.isEmpty()) {
+                                    component.nameCheck(false)
                                 }
                             },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Text,
+                                keyboardType = KeyboardType.Ascii,
                                 autoCorrect = false,
                                 imeAction = ImeAction.Next
                             ),
                             label = {Text("Name")},
-                            modifier = Modifier.width(200.dp)
+                            modifier = Modifier.width(200.dp),
+                            colors = if (eventDetailsModel.isNameValid) {
+                                TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
+                                    unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
+                                )
+                            } else {
+                                TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = MaterialTheme.colors.error,
+                                    unfocusedBorderColor = MaterialTheme.colors.error
+                                )
+                            }
 
                         )
                         Spacer(modifier = Modifier.weight(0.1f))
@@ -220,17 +324,17 @@ fun EventDetailsContent(component: EventDetailsComponent) {
                         OutlinedTextField(
                             value = eventDetailsModel.event.desc,
                             onValueChange = {
-                                if(it.length < 100) {
-                                    component.onDescChanged(it)
-                                }
+                                if (it.length < 200) component.onDescChanged(it)
                             },
                             singleLine = false,
                             keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Text,
+                                keyboardType = KeyboardType.Ascii,
                                 autoCorrect = false,
                                 imeAction = ImeAction.Next
                             ),
-                            maxLines = 4
+                            maxLines = 5,
+                            label = {Text("Description")}
+
 
                         )
 
@@ -241,22 +345,43 @@ fun EventDetailsContent(component: EventDetailsComponent) {
 
 
                     Column(
-                        modifier = Modifier.width(150.dp)
+                        modifier = Modifier.width(200.dp)
                     ) {
 
                         //Date
                         OutlinedTextField(
-                            value = pgDateToDate(eventDetailsModel.event.date),
+                            value = eventDetailsModel.event.date,
                             onValueChange = {
-                                    component.onDateChanged(dateToPgDate(it))
+                                if (it.length <= 8) {
+                                    component.onDateChanged(it)
+                                    println(eventDetailsModel.event.date)
+                                }
+                                try {
+                                    component.dateCheck(true)
+                                    val testDate = dateToPgDate(it)
+                                } catch (E: Exception) {
+                                    component.dateCheck(false)
+                                }
+
                             },
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Number,
                                 autoCorrect = false,
                                 imeAction = ImeAction.Next
                             ),
+                            visualTransformation = DateTransformation(),
                             label = {Text("Date (MM/DD/YYYY)")},
-                            modifier = Modifier.width(150.dp)
+                            colors = if (eventDetailsModel.isDateValid) {
+                                TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
+                                    unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
+                                )
+                            } else {
+                                TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = MaterialTheme.colors.error,
+                                    unfocusedBorderColor = MaterialTheme.colors.error
+                                )
+                            }
                         )
 
                         Spacer(modifier = Modifier.weight(0.1f))
@@ -265,13 +390,33 @@ fun EventDetailsContent(component: EventDetailsComponent) {
                         OutlinedTextField(
                             value = eventDetailsModel.event.location,
                             onValueChange = {
-                                component.onLocationChanged(it)
+
+                                if (it.length < 50) {
+                                    component.onLocationChanged(it)
+                                    component.locationCheck((true))
+                                }
+                                if (it.isEmpty()){
+                                    component.locationCheck((false))
+                                }
+
                             },
                             keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
+                                keyboardType = KeyboardType.Ascii,
                                 autoCorrect = false,
                                 imeAction = ImeAction.Next
-                            )
+                            ),
+                            colors = if (eventDetailsModel.isLocationValid) {
+                                TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
+                                    unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
+                                )
+                            } else {
+                                TextFieldDefaults.outlinedTextFieldColors(
+                                    focusedBorderColor = MaterialTheme.colors.error,
+                                    unfocusedBorderColor = MaterialTheme.colors.error
+                                )
+                            },
+                            label = {Text("Location")}
                         )
                     }
 
@@ -286,7 +431,7 @@ fun EventDetailsContent(component: EventDetailsComponent) {
                             eventType = type
                         }
                     }
-                    var selectedType = "${eventType.typeName} : ${eventType.typePoints} Points"
+                    var selectedType = "${eventType.typeName}:${eventType.typePoints}"
                     Column() {
 
                         OutlinedTextField(
@@ -298,6 +443,7 @@ fun EventDetailsContent(component: EventDetailsComponent) {
                             trailingIcon = {
                                 Icon(Icons.Filled.ArrowDropDown,"", modifier = Modifier.clickable { expanded = true })
                             },
+
 
 
                             )
@@ -313,7 +459,7 @@ fun EventDetailsContent(component: EventDetailsComponent) {
                                         expanded = false
                                     }
                                 ) {
-                                    Text("${type.typeName} : ${type.typePoints} Points")
+                                    Text("${type.typeName}:${type.typePoints}")
                                 }
                             }
                         }
@@ -330,5 +476,5 @@ fun EventDetailsContent(component: EventDetailsComponent) {
 }
 
 fun dateToPgDate(date: String): String {
-    return LocalDate.parse(date, DateTimeFormatter.ofPattern("dd/MM/YYYY")).toString()
+    return LocalDate.parse("${date.substring(0,2)}/${date.substring(2,4)}/${date.substring(4)}", DateTimeFormatter.ofPattern("MM/dd/yyyy")).toString()
 }

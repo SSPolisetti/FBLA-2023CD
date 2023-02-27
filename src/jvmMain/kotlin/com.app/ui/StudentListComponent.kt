@@ -9,6 +9,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
+import androidx.compose.runtime.internal.isLiveLiteralsEnabled
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import com.app.data.DbManager
+import com.app.data.Prize
 import com.app.data.Student
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
@@ -26,14 +28,10 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.essenty.lifecycle.doOnCreate
 import com.arkivanov.essenty.lifecycle.doOnResume
 import com.arkivanov.essenty.lifecycle.doOnDestroy
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.datetime.LocalDate
 import java.io.OutputStream
-import java.io.File
 import java.io.FileOutputStream
-import java.io.FileWriter
 
 
 interface StudentListComponent {
@@ -51,6 +49,16 @@ interface StudentListComponent {
 
     fun onClearSearch()
 
+    fun onGetWinnersClicked()
+
+    fun showGenerateMessage()
+
+    fun closeGenerateMessage()
+
+    fun showTopMessage()
+
+    fun closeTopMessage()
+
     fun getReport()
 
     data class StudentListModel(
@@ -58,7 +66,15 @@ interface StudentListComponent {
         val searchTerm : String,
         val orderBy : String,
         val isUsingSearch : Boolean,
-        val isLoading : Boolean
+        val isLoading : Boolean,
+        val showDialog : Boolean,
+        val showTopDialog : Boolean,
+        val maxWinner : Student,
+        val ninthWinner : Student,
+        val tenthWinner : Student,
+        val eleventhWinner : Student,
+        val twelfthWinner : Student,
+        val prizes : List<Prize>
     )
 }
 
@@ -93,7 +109,15 @@ class DefaultStudentListComponent(
                 searchTerm = "",
                 orderBy = "last_name",
                 isUsingSearch = false,
-                isLoading = false
+                isLoading = false,
+                showDialog = false,
+                showTopDialog = false,
+                maxWinner = Student(0, "", "", 0, -1, ""),
+                ninthWinner = Student(0, "", "", 0, -1, ""),
+                tenthWinner = Student(0, "", "", 0, -1, ""),
+                eleventhWinner = Student(0, "", "", 0, -1, ""),
+                twelfthWinner = Student(0, "", "", 0, -1, ""),
+                prizes = emptyList<Prize>()
             )
         )
 
@@ -105,6 +129,7 @@ class DefaultStudentListComponent(
             //Update model to indicate data is being loaded through the UI
             model.value = model.value.copy(isLoading = true)
 
+            delay(30)
             //Use isUsingSearch to either search or simply load students
             val students = if (model.value.isUsingSearch) {
                 DbManager.searchStudent(model.value.searchTerm, model.value.orderBy)
@@ -112,12 +137,16 @@ class DefaultStudentListComponent(
                 DbManager.loadStudents(model.value.orderBy)
             }
 
+            val prizes = DbManager.loadPrizes()
+
             //Update the model with the loaded student data
-            model.value = model.value.copy(students = students, isLoading = false)
+            model.value = model.value.copy(students = students, prizes = prizes,isLoading = false)
 
 
         }
     }
+
+
 
     override fun onSearchClicked() {
         model.value = model.value.copy(isUsingSearch = true)
@@ -132,6 +161,51 @@ class DefaultStudentListComponent(
     override fun onClearSearch() {
         model.value = model.value.copy(searchTerm = "", isUsingSearch = false)
         loadStudents()
+    }
+
+    override fun onGetWinnersClicked() {
+        var maxPointsWinner = Student(0, "", "", 0, -1, "")
+        var ninthStudents : MutableList<Student> = mutableListOf<Student>()
+        var tenthStudents : MutableList<Student> = mutableListOf<Student>()
+        var eleventhStudents : MutableList<Student> = mutableListOf<Student>()
+        var twelfthStudents : MutableList<Student> = mutableListOf<Student>()
+
+        scope.launch {
+            model.value = model.value.copy(isLoading = true)
+
+            for (student in model.value.students) {
+                if (student.grade == 9) {
+                    ninthStudents.add(student)
+                } else if(student.grade == 10) {
+                    tenthStudents.add(student)
+                } else if(student.grade == 11) {
+                    eleventhStudents.add(student)
+                } else {
+                    twelfthStudents.add(student)
+                }
+
+
+                model.value = if (student.points > maxPointsWinner.points)
+                 {
+                    model.value.copy(maxWinner = student)
+                } else {
+                    model.value.copy(maxWinner = student)
+                }
+            }
+
+            model.value = model.value.copy(
+                ninthWinner = ninthStudents.random(),
+                tenthWinner = tenthStudents.random(),
+                eleventhWinner = eleventhStudents.random(),
+                twelfthWinner = twelfthStudents.random()
+            )
+
+            var file = System.getProperty("user.home") + "/Downloads/Winners-${java.time.LocalDate.now()}_${java.time.LocalDate.EPOCH}.csv"
+            FileOutputStream(file).apply { writeCsv(model.value.prizes, model.value.maxWinner, model.value.ninthWinner, model.value.tenthWinner, model.value.eleventhWinner, model.value.twelfthWinner) }
+
+            model.value = model.value.copy(isLoading = false)
+
+        }
     }
 
 
@@ -152,35 +226,60 @@ class DefaultStudentListComponent(
 
             students = DbManager.loadStudents("grade")
 
-            var file = System.getProperty("user.home") + "/Downloads/Student_Points_Report.csv"
+            println(students.toString())
+
+            val file = System.getProperty("user.home") + "/Downloads/Student_Points_Report-${java.time.LocalDate.now()}_${java.time.LocalDate.EPOCH}.csv"
             FileOutputStream(file).apply { writeCsv(students) }
 
+            model.value = model.value.copy(isLoading = false)
+
         }
+
+
     }
 
     override fun onAddStudentSelected() {
         onAddStudentClicked()
     }
+
+    override fun showGenerateMessage() {
+        model.value = model.value.copy(showDialog = true)
+    }
+    override fun closeGenerateMessage() {
+        model.value = model.value.copy(showDialog = false)
+    }
+
+    override fun showTopMessage(){
+        model.value = model.value.copy(showTopDialog = true)
+    }
+    override fun closeTopMessage(){
+        model.value = model.value.copy(showTopDialog = false)
+    }
 }
 
-@Preview
 @Composable
 fun StudentListContent(component: StudentListComponent, modifier : Modifier = Modifier) {
     val studentListModel by component.model.subscribeAsState()
+    GenerateMessage(studentListModel.showDialog, component)
+    TopMessage(studentListModel.showTopDialog, component)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
 
-    Column {
+    ) {
 
+        //search row
         Row (
-            modifier = Modifier.align(Alignment.End).padding(top = 10.dp, bottom = 15.dp),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.align(Alignment.End).padding(top = 10.dp, bottom = 15.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+
         ) {
 
             /* OrderByDropdown*/
             var expanded by remember { mutableStateOf(false)}
             val items = mapOf("last_name" to "Alphabetical", "points" to "Points")
             var selectedText = items[studentListModel.orderBy].toString()
-            Column() {
+            Column {
                 OutlinedTextField(
                     value = selectedText,
                     onValueChange = {selectedText = it},
@@ -218,9 +317,12 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
                 value = studentListModel.searchTerm,
                 onValueChange = {component.onSearchValueChange(it)},
                 singleLine = true,
-                modifier = Modifier.height(50.dp).width(300.dp).padding(start = 10.dp, end = 10.dp),
+                modifier = Modifier.height(75.dp).width(300.dp).padding(start = 10.dp, end = 10.dp),
                 label = {Text("Search")},
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, autoCorrect = false, imeAction = ImeAction.Next)
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Ascii,
+                    autoCorrect = false,
+                    imeAction = ImeAction.Next)
 
 
             )
@@ -259,7 +361,8 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
             val stateVertical = rememberScrollState(0)
             Box(modifier = Modifier.height(425.dp).fillMaxWidth().verticalScroll(stateVertical)) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(end = 15.dp)
                 ) {
                     studentListModel.students.forEach {student ->
 
@@ -282,16 +385,46 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
                                 if (student.middle_initial != "") {
                                     name += " " + student.middle_initial
                                 }
-                                Text("Name: $name")
-                                Spacer(modifier = Modifier.weight(1f))
-                                Text("Grade: " + student.grade.toString())
+
+                                Column(
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.width(250.dp)
+                                ) {
+                                    Text(name)
+                                }
+
+
                                 Spacer(modifier = Modifier.weight(0.5f))
-                                Text("Points: " + student.points.toString())
+
+                                Column(
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.width(100.dp)
+                                ) {
+                                    Text("Grade: " + student.grade.toString())
+                                }
+
+                                Spacer(modifier = Modifier.weight(0.5f))
+
+                                Column (
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.width(100.dp)
+                                        ) {
+                                    Text("Points: " + student.points.toString())
+                                }
+
+
                             }
                         }
                         Spacer(modifier = Modifier.weight(0.1f))
                     }
                 }
+
+
+
+
                 VerticalScrollbar(
                     modifier = Modifier.align(Alignment.CenterEnd).height(425.dp),
                     adapter = rememberScrollbarAdapter(stateVertical)
@@ -309,7 +442,7 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
 
         }
 
-        Spacer(modifier = Modifier.weight(0.1f))
+        Spacer(modifier = Modifier.weight(0.05f))
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -317,7 +450,8 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
             Spacer(modifier = Modifier.weight(0.2f))
             Button(
                 onClick = {
-
+                    component.getReport()
+                    component.showGenerateMessage()
                 }
             ) {
                 Text("Generate Report")
@@ -325,6 +459,8 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
             Spacer(modifier = Modifier.weight(0.3f))
             Button(
                 onClick = {
+                    component.onGetWinnersClicked()
+                    component.showTopMessage()
 
                 }
             ) {
@@ -341,23 +477,130 @@ fun StudentListContent(component: StudentListComponent, modifier : Modifier = Mo
             Spacer(modifier = Modifier.weight(0.2f))
         }
 
+        Spacer(modifier = Modifier.weight(0.1f))
+
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun GenerateMessage(openDialog: Boolean, component: StudentListComponent) {
+    if (openDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                component.closeGenerateMessage()
+            },
+            title = {
+                Text("Report Generated")
+            },
+            text = {
+                Text("Report has been generated and placed in downloads folder.")
+            },
+            buttons = {
+                Button(
+                    modifier = Modifier.width(500.dp).height(250.dp),
+                    onClick = {
+                        component.closeGenerateMessage()
+                    }
+                ) {
+                    Text("Dismiss")
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun TopMessage(openDialog: Boolean, component: StudentListComponent) {
+    if (openDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                component.closeTopMessage()
+            },
+            title = {
+                Text("Top Scores Report Generated")
+            },
+            text = {
+                Text("Report has been generated and placed in downloads folder.")
+            },
+            buttons = {
+                Button(
+                    modifier = Modifier.width(500.dp).height(250.dp),
+                    onClick = {
+                        component.closeTopMessage()
+                    }
+                ) {
+                    Text("Dismiss")
+                }
+            }
+        )
+    }
+}
 
 
 
 fun OutputStream.writeCsv(students : List<Student>) {
     val writer = bufferedWriter()
-    writer.write("""Grade, "Name",""Points""")
+    writer.write("""Grade,Name,Points""")
     writer.newLine()
     students.forEach {
-        val name = "${it.last_name}, ${it.first_name} ${it.middle_initial}"
-        writer.write("${it.grade}, ${name}, ${it.points}")
+        writer.write("${it.grade}, ${it.last_name} ${it.first_name} ${it.middle_initial}, ${it.points}")
+
         writer.newLine()
     }
+    writer.flush()
+    writer.close()
 }
 
+
+fun OutputStream.writeCsv(prizes : List<Prize>, max : Student, ninth : Student, tenth : Student, eleventh : Student, twelfth : Student) {
+    val writer = bufferedWriter()
+    writer.write("""Winner,Name,Points, Prize""")
+    writer.newLine()
+    var ninthPrize = Prize(0,"", -1, "")
+    var tenthPrize = Prize(0,"", -1, "")
+    var eleventhPrize = Prize(0,"", -1, "")
+    var twelfthPrize = Prize(0,"", -1, "")
+    var maxPrize = Prize(0, "", -1, "")
+    for(prize in prizes) {
+        if(prize.min_point <= ninth.points && prize.min_point > ninthPrize.min_point) {
+            ninthPrize = prize
+        }
+        if(prize.min_point <= tenth.points && prize.min_point > tenthPrize.min_point) {
+            tenthPrize = prize
+        }
+        if(prize.min_point <= eleventh.points && prize.min_point > eleventhPrize.min_point) {
+            eleventhPrize = prize
+        }
+        if(prize.min_point <= twelfth.points && prize.min_point > twelfthPrize.min_point) {
+            twelfthPrize = prize
+        }
+        if(prize.min_point <= max.points && prize.min_point > maxPrize.min_point) {
+            maxPrize = prize
+        }
+
+    }
+
+
+    writer.write("Grade 9 Winner,${ninth.last_name} ${ninth.first_name} ${ninth.middle_initial}, ${ninth.points}, ${ninthPrize.name}")
+    writer.newLine()
+    writer.write("Grade 10 Winner,${tenth.last_name} ${tenth.first_name} ${tenth.middle_initial}, ${tenth.points}, ${tenthPrize.name}")
+    writer.newLine()
+    writer.write("Grade 11 Winner,${eleventh.last_name} ${eleventh.first_name} ${eleventh.middle_initial}, ${eleventh.points}, ${eleventhPrize.name}")
+    writer.newLine()
+    writer.write("Grade 12 Winner,${twelfth.last_name} ${twelfth.first_name} ${twelfth.middle_initial}, ${twelfth.points}, ${twelfthPrize.name}")
+    writer.newLine()
+    writer.write("Most Points Winner,${max.last_name} ${max.first_name} ${max.middle_initial}, ${max.points}, ${maxPrize.name}")
+
+
+    writer.flush()
+    writer.close()
+
+
+
+
+}
 
 
 

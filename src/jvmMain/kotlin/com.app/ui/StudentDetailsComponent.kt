@@ -8,6 +8,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
+import androidx.compose.runtime.internal.isLiveLiteralsEnabled
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -48,6 +49,14 @@ interface StudentDetailsComponent {
 
     fun revertAttendance(eventId : Int)
 
+    fun firstNameCheck(isValid : Boolean)
+
+    fun lastNameCheck(isValid : Boolean)
+
+    fun showErrorMessage()
+
+    fun closeErrorMessage()
+
 
     data class StudentDetailsModel(
         val student : Student,
@@ -56,7 +65,9 @@ interface StudentDetailsComponent {
         val isLoading : Boolean,
         val removeAttendance: MutableSet<Int>,
         val addAttendance : MutableSet<Int>,
-        val isLocked : Boolean
+        val isFNameValid : Boolean,
+        val isLNameValid : Boolean,
+        val showDialog : Boolean
     )
 }
 
@@ -92,7 +103,9 @@ class DefaultStudentDetailsComponent(
                 isLoading = false,
                 removeAttendance = mutableSetOf<Int>(),
                 addAttendance = mutableSetOf<Int>(),
-                isLocked = false
+                isFNameValid = true,
+                isLNameValid = true,
+                showDialog = false
             )
         )
 
@@ -126,6 +139,7 @@ class DefaultStudentDetailsComponent(
 
     override fun saveChanges() {
 
+        if (model.value.isLNameValid && model.value.isFNameValid) {
             scope.launch {
 
                 model.value = model.value.copy(isLoading = true)
@@ -140,7 +154,9 @@ class DefaultStudentDetailsComponent(
 
                 model.value = model.value.copy(isLoading = false)
             }
-        loadEvents()
+            loadEvents()
+        }
+
 
     }
 
@@ -185,6 +201,54 @@ class DefaultStudentDetailsComponent(
         )
     }
 
+    override fun firstNameCheck(isValid : Boolean) {
+        model.value = model.value.copy(isFNameValid = isValid)
+    }
+
+
+    override fun lastNameCheck(isValid : Boolean) {
+        model.value = model.value.copy(isLNameValid = isValid)
+    }
+
+    override fun showErrorMessage() {
+        model.value = model.value.copy(showDialog = true)
+    }
+
+    override fun closeErrorMessage() {
+        model.value = model.value.copy(showDialog = false)
+    }
+}
+
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun ErrorMessage(openDialog: Boolean, component: StudentDetailsComponent) {
+    if (openDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                component.closeErrorMessage()
+            },
+            title = {
+                Text("Invalid Input")
+            },
+            text = {
+                Text("First name and last name are required fields")
+            },
+            buttons = {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        component.closeErrorMessage()
+                    }
+                ) {
+                    Text("Dismiss")
+                }
+            },
+            modifier = Modifier.width(500.dp).height(250.dp)
+
+
+        )
+    }
 }
 
 
@@ -193,7 +257,10 @@ class DefaultStudentDetailsComponent(
 fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifier = Modifier) {
     val studentDetailsModel by component.model.subscribeAsState()
 
-    Column() {
+    ErrorMessage(studentDetailsModel.showDialog, component)
+
+
+    Column {
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -207,10 +274,10 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
             }
             Spacer(modifier = Modifier.weight(0.3f))
             Button(onClick = {
-                if (!studentDetailsModel.isLocked) {
+                if (studentDetailsModel.isFNameValid && studentDetailsModel.isLNameValid) {
                     component.saveChanges()
                 } else {
-                    //launch dialog box
+                    component.showErrorMessage()
                 }
             }) {
                 Text("Save Changes")
@@ -241,16 +308,33 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
                 OutlinedTextField(
                     value = studentDetailsModel.student.last_name,
                     onValueChange = {
-                        if (it.length < 20) component.onLastNameChanged(it)
+                        if (it.length < 20) {
+                            component.onLastNameChanged(it)
+                            component.lastNameCheck(true)
+                        }
+                        if (it.isEmpty()){
+                            component.lastNameCheck(false)
+                        }
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
+                        keyboardType = KeyboardType.Ascii,
                         autoCorrect = false,
                         imeAction = ImeAction.Next
                     ),
                     label = {Text("Last Name")},
-                    modifier = Modifier.width(150.dp)
+                    modifier = Modifier.width(150.dp),
+                    colors = if (studentDetailsModel.isLNameValid) {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
+                            unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled),
+                        )
+                    } else {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.error,
+                            unfocusedBorderColor = MaterialTheme.colors.error
+                        )
+                    }
                 )
 
                 Spacer(modifier = Modifier.weight(0.01f))
@@ -258,16 +342,31 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
                 OutlinedTextField(
                     value = studentDetailsModel.student.first_name,
                     onValueChange = {
-                        if (it.length < 20) component.onFirstNameChanged(it)
+                        if (it.length < 20) {
+                            component.onFirstNameChanged(it)
+                            component.firstNameCheck(true)
+                        }
+                        if (it.isEmpty())  component.firstNameCheck(false)
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
+                        keyboardType = KeyboardType.Ascii,
                         autoCorrect = false,
                         imeAction = ImeAction.Next
                     ),
                     label = {Text("First Name")},
-                    modifier = Modifier.width(150.dp)
+                    modifier = Modifier.width(150.dp),
+                    colors  = if (studentDetailsModel.isFNameValid) {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
+                            unfocusedBorderColor = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
+                        )
+                    } else {
+                        TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = MaterialTheme.colors.error,
+                            unfocusedBorderColor = MaterialTheme.colors.error
+                        )
+                    }
                 )
                 Spacer(modifier = Modifier.weight(0.05f))
                 Text(",")
@@ -279,7 +378,7 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
+                        keyboardType = KeyboardType.Ascii,
                         autoCorrect = false,
                         imeAction = ImeAction.Next
                     ),
@@ -359,7 +458,7 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
                                 )
                                 Spacer(modifier = Modifier.weight(0.1f))
                                 Text(
-                                    pgDateToDate(event.date)
+                                    pgDateToDate(event.date, isEditing = false)
                                 )
 
                                 Spacer(modifier = Modifier.weight(0.1f))
@@ -412,9 +511,14 @@ fun StudentDetailsContent(component : StudentDetailsComponent, modifier: Modifie
 
 }
 
-fun pgDateToDate(date : String) : String {
+fun pgDateToDate(date : String, isEditing : Boolean) : String {
 
     val dateList = date.split("-")
-    return "${dateList[2]}/${dateList[1]}/${dateList[0]}"
+    return if (isEditing) {
+        "${dateList[1]}${dateList[2]}${dateList[0]}"
+
+    } else {
+        "${dateList[1]}/${dateList[2]}/${dateList[0]}"
+    }
 
 }
